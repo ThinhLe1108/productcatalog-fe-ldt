@@ -1,0 +1,377 @@
+/* Reset */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* Nền full màn hình + FIX mobile viewport */
+.auth-container {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+
+  /* hỗ trợ mobile tốt hơn */
+  min-height: 100svh;
+  /* safari/chrome mobile */
+  min-height: 100dvh;
+  /* viewport động */
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+  box-sizing: border-box;
+
+  /* quan trọng: cho phép scroll nếu form cao hơn màn hình */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Box */
+.auth-box {
+  background: white;
+  padding: 55px;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+
+  width: 100%;
+  max-width: 520px;
+  box-sizing: border-box;
+
+  /* tránh bị “dạt góc” khi container scroll */
+  margin: auto;
+}
+
+/* Title */
+.auth-box h2 {
+  text-align: center;
+  margin-bottom: 35px;
+  color: #333;
+  font-size: 32px;
+}
+
+/* Form */
+.form-group {
+  margin-bottom: 22px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 10px;
+  color: #555;
+  font-weight: 600;
+  font-size: 15px;
+  text-align: left;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 15px;
+  transition: border-color 0.3s;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* Button */
+.btn-submit {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.3s;
+}
+
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Message */
+.message {
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 22px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Toggle */
+.toggle-form {
+  text-align: center;
+  margin-top: 22px;
+}
+
+.toggle-form p {
+  color: #666;
+  font-size: 14px;
+}
+
+.toggle-form span {
+  color: #667eea;
+  cursor: pointer;
+  font-weight: 700;
+  margin-left: 5px;
+}
+
+.toggle-form span:hover {
+  text-decoration: underline;
+}
+
+/* =========================
+   RESPONSIVE BREAKPOINTS
+   ========================= */
+
+/* Tablet */
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 16px;
+  }
+
+  .auth-box {
+    max-width: 480px;
+    padding: 42px 30px;
+    border-radius: 12px;
+  }
+
+  .auth-box h2 {
+    font-size: 28px;
+    margin-bottom: 28px;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 13px 14px;
+    font-size: 15px;
+  }
+
+  .btn-submit {
+    padding: 13px;
+    font-size: 16px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+
+  /* Trên mobile: ưu tiên nằm trên, tránh cảm giác “lọt góc” */
+  .auth-container {
+    justify-content: center;
+    align-items: flex-start;
+    padding: 14px;
+  }
+
+  .auth-box {
+    max-width: 100%;
+    padding: 28px 18px;
+    border-radius: 12px;
+
+    /* tạo khoảng cách trên cho dễ nhìn */
+    margin: 24px auto;
+  }
+
+  .auth-box h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 12px 12px;
+    font-size: 14px;
+  }
+
+  .btn-submit {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .toggle-form p {
+    font-size: 13px;
+  }
+}
+
+/* Màn hình thấp (bật F12 hay gặp): cho scroll + canh top */
+@media (max-height: 650px) {
+  .auth-container {
+    align-items: flex-start;
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+
+  .auth-box {
+    margin: 18px auto;
+  }
+}
+
+/* SIÊU NHỎ: 320px trở xuống (F12 hay gặp kiểu 227px-320px) */
+@media (max-width: 320px) {
+  .auth-container {
+    padding: 8px;
+    align-items: flex-start;
+  }
+
+  .auth-box {
+    width: 100%;
+    max-width: 100%;
+    padding: 18px 12px;
+    border-radius: 10px;
+    margin: 12px auto;
+  }
+
+  .auth-box h2 {
+    font-size: 20px;
+    margin-bottom: 14px;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 10px 10px;
+    font-size: 13px;
+  }
+
+  .btn-submit {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .toggle-form p {
+    font-size: 12px;
+  }
+}
+
+/* Màn hình rất nhỏ khi F12 mở (width < 280px) */
+@media (max-width: 280px) {
+  .auth-container {
+    padding: 4px;
+  }
+
+  .auth-box {
+    padding: 14px 10px;
+    margin: 8px auto;
+  }
+
+  .auth-box h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+  }
+
+  .form-group label {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .btn-submit {
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .toggle-form p {
+    font-size: 11px;
+  }
+}
+
+/* Khi cả width và height đều nhỏ (F12 DevTools mở) */
+@media (max-width: 480px) and (max-height: 500px) {
+  .auth-container {
+    align-items: flex-start;
+    padding: 8px;
+  }
+
+  .auth-box {
+    padding: 16px 14px;
+    margin: 8px auto;
+  }
+
+  .auth-box h2 {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .btn-submit {
+    padding: 10px;
+    font-size: 14px;
+  }
+}

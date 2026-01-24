@@ -1,0 +1,8 @@
+1. folder src là nơi chứa code
+2. package.json: nơi quản lý thông tin của project
+
+3.SPA => Single Page Application
+
+=> index.html
+=> chuyển trang không đổi html
+=> chỉ đổi nội dung trong html cũ

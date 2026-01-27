@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./ManagerCategory.css";
 
 const ManagerCategory = ({
@@ -14,38 +14,60 @@ const ManagerCategory = ({
   onChanged,           // () => reload categories
 }) => {
   const [name, setName] = useState("");
-
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+
+  // Alert state tách riêng
+  const [alert, setAlert] = useState({ type: "", text: "" });
+  const alertTimerRef = useRef(null);
 
   const getAuthHeader = () => (token ? { Authorization: `Bearer ${token}` } : {});
 
-  const startCreate = () => {
+  const clearAlert = () => setAlert({ type: "", text: "" });
+
+  const showAlert = (type, text) => {
+    if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
+
+    setAlert({ type, text });
+
+    alertTimerRef.current = setTimeout(() => {
+      setAlert({ type: "", text: "" });
+      alertTimerRef.current = null;
+    }, 5000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
+    };
+  }, []);
+
+  const startCreate = (options = { keepAlert: false }) => {
     clearEditing?.();
     setName("");
-    setMessage("");
+
+    if (!options.keepAlert) clearAlert();
   };
 
   // Đổ form khi HomePage chọn "Sửa"
   useEffect(() => {
     if (!editingCategory) return;
     setName(editingCategory.name || "");
-    setMessage("");
+    clearAlert();
   }, [editingCategory]);
 
   const validateName = () => {
     if (!name || name.trim() === "") {
-      setMessage("Tên danh mục không được để trống");
+      showAlert("err", "Tên danh mục không được để trống");
       return false;
     }
     return true;
-  };  
+  };
 
   const createCategory = async () => {
     if (!validateName()) return;
-  
+
     setLoading(true);
-    setMessage("");
+    clearAlert();
     try {
       const res = await fetch(`${apiBaseUrl}/api/categories/create`, {
         method: "POST",
@@ -55,14 +77,14 @@ const ManagerCategory = ({
         },
         body: JSON.stringify({ name: name.trim() }),
       });
-  
+
       if (!res.ok) throw new Error((await res.text()) || "Tạo thất bại");
-  
-      setMessage("Tạo thành công");
+
+      showAlert("ok", "Tạo thành công");
       await onChanged?.();
-      startCreate();
+      startCreate({ keepAlert: true });
     } catch (e) {
-      setMessage(e.message || "Lỗi tạo");
+      showAlert("err", e.message || "Lỗi tạo");
     } finally {
       setLoading(false);
     }
@@ -71,9 +93,9 @@ const ManagerCategory = ({
   const updateCategory = async () => {
     if (!editingCategory?.id) return;
     if (!validateName()) return;
-  
+
     setLoading(true);
-    setMessage("");
+    clearAlert();
     try {
       const res = await fetch(
         `${apiBaseUrl}/api/categories/id/${encodeURIComponent(editingCategory.id)}`,
@@ -86,14 +108,14 @@ const ManagerCategory = ({
           body: JSON.stringify({ name: name.trim() }),
         }
       );
-  
+
       if (!res.ok) throw new Error((await res.text()) || "Cập nhật thất bại");
-  
-      setMessage("Cập nhật thành công");
+
+      showAlert("ok", "Cập nhật thành công");
       await onChanged?.();
-      startCreate();
+      startCreate({ keepAlert: true });
     } catch (e) {
-      setMessage(e.message || "Lỗi cập nhật");
+      showAlert("err", e.message || "Lỗi cập nhật");
     } finally {
       setLoading(false);
     }
@@ -102,7 +124,7 @@ const ManagerCategory = ({
   const deleteCategory = async (id) => {
     if (!id) return;
     setLoading(true);
-    setMessage("");
+    clearAlert();
     try {
       const res = await fetch(`${apiBaseUrl}/api/categories/id/${encodeURIComponent(id)}`, {
         method: "DELETE",
@@ -111,14 +133,15 @@ const ManagerCategory = ({
           ...getAuthHeader(),
         },
       });
+
       if (!res.ok) throw new Error((await res.text()) || "Xoá thất bại");
 
-      setMessage("Xóa thành công");
+      showAlert("ok", "Xóa thành công");
       await onChanged?.();
 
-      if (editingCategory?.id === id) startCreate();
+      if (editingCategory?.id === id) startCreate({ keepAlert: true });
     } catch (e) {
-      setMessage(e.message || "Lỗi xoá");
+      showAlert("err", e.message || "Lỗi xoá");
     } finally {
       setLoading(false);
     }
@@ -154,22 +177,37 @@ const ManagerCategory = ({
             </div>
           </div>
 
-          <div className="mc-form-actions">
-            {editingCategory ? (
-              <button className="mc-btn primary" onClick={updateCategory} disabled={loading} type="button">
-                {loading ? "Đang lưu..." : "Cập nhật"}
-              </button>
-            ) : (
-              <button className="mc-btn primary" onClick={createCategory} disabled={loading} type="button">
-                {loading ? "Đang tạo..." : "Tạo"}
-              </button>
-            )}
+          {/* TÁCH RIÊNG: Actions và Alert */}
+          <div className="mc-footer">
+            <div className="mc-form-actions">
+              {editingCategory ? (
+                <button
+                  className="mc-btn primary"
+                  onClick={updateCategory}
+                  disabled={loading}
+                  type="button"
+                >
+                  {loading ? "Đang lưu..." : "Cập nhật"}
+                </button>
+              ) : (
+                <button
+                  className="mc-btn primary"
+                  onClick={createCategory}
+                  disabled={loading}
+                  type="button"
+                >
+                  {loading ? "Đang tạo..." : "Tạo"}
+                </button>
+              )}
+            </div>
 
-            {message && (
-              <div className={`mc-alert ${message.includes("thành công") ? "ok" : "err"}`}>
-                {message}
-              </div>
-            )}
+            <div className="mc-alert-slot" aria-live="polite">
+              {alert.text ? (
+                <div className={`mc-alert ${alert.type === "ok" ? "ok" : "err"}`}>
+                  {alert.text}
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>

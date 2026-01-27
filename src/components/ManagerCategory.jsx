@@ -33,7 +33,17 @@ const ManagerCategory = ({
     setMessage("");
   }, [editingCategory]);
 
+  const validateName = () => {
+    if (!name || name.trim() === "") {
+      setMessage("Tên danh mục không được để trống");
+      return false;
+    }
+    return true;
+  };  
+
   const createCategory = async () => {
+    if (!validateName()) return;
+  
     setLoading(true);
     setMessage("");
     try {
@@ -43,10 +53,11 @@ const ManagerCategory = ({
           "Content-Type": "application/json",
           ...getAuthHeader(),
         },
-        body: JSON.stringify({ name}),
+        body: JSON.stringify({ name: name.trim() }),
       });
+  
       if (!res.ok) throw new Error((await res.text()) || "Tạo thất bại");
-
+  
       setMessage("Tạo thành công");
       await onChanged?.();
       startCreate();
@@ -59,6 +70,8 @@ const ManagerCategory = ({
 
   const updateCategory = async () => {
     if (!editingCategory?.id) return;
+    if (!validateName()) return;
+  
     setLoading(true);
     setMessage("");
     try {
@@ -70,11 +83,12 @@ const ManagerCategory = ({
             "Content-Type": "application/json",
             ...getAuthHeader(),
           },
-          body: JSON.stringify({ name}),
+          body: JSON.stringify({ name: name.trim() }),
         }
       );
+  
       if (!res.ok) throw new Error((await res.text()) || "Cập nhật thất bại");
-
+  
       setMessage("Cập nhật thành công");
       await onChanged?.();
       startCreate();

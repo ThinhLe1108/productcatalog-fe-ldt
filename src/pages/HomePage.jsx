@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import "./HomePage.css";
 import reactLogo from "../assets/react.svg";
 import ManagerCategory from "../components/ManagerCategory";
 import ManagerProduct from "../components/ManagerProduct";
 import ProductSearch from "../components/ProductSearch";
+import Cart from "../components/Cart";
 import API_BASE_URL from "../config.js";
 
 const HomePage = () => {
@@ -43,6 +44,11 @@ const HomePage = () => {
 
   const [sortType, setSortType] = useState(""); // "", "asc", "desc"
 
+  // Cart
+  const cartRef = useRef(null);
+  const [toast, setToast] = useState(null);
+  const [addingToCart, setAddingToCart] = useState(null);
+
   useEffect(() => {
     setName(localStorage.getItem("fullName") || "");
     setRole(localStorage.getItem("roleName") || "");
@@ -52,6 +58,32 @@ const HomePage = () => {
     setSearchResults(results);
     setSearchError(error);
     setIsSearchMode(results.length > 0 || error);
+  };
+
+  const showToast = (message, isError = false) => {
+    setToast({ message, isError });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleAddToCart = async (productId, productName) => {
+    setAddingToCart(productId);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/cart/items`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ productId, quantity: 1 }),
+      });
+      if (!res.ok) throw new Error((await res.text()) || "Không thể thêm vào giỏ hàng");
+      showToast(`Đã thêm "${productName}" vào giỏ hàng!`);
+      // Refresh cart component
+      if (cartRef.current) {
+        cartRef.current.fetchCart();
+      }
+    } catch (e) {
+      showToast(e.message || "Lỗi thêm vào giỏ hàng", true);
+    } finally {
+      setAddingToCart(null);
+    }
   };
 
   const logout = () => {
@@ -174,8 +206,15 @@ const HomePage = () => {
           <span className="hp-brand">Catalog</span>
         </div>
 
-        <div className="hp-header-right">
+        <div className="hp-header-right" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           {name ? <div className="hp-greeting">Xin Chào {name}</div> : null}
+          {role !== "ADMIN" && (
+            <Cart
+              ref={cartRef}
+              apiBaseUrl={API_BASE_URL}
+              token={token}
+            />
+          )}
           <button className="hp-logout" onClick={logout}>
             Đăng xuất
           </button>
@@ -304,7 +343,7 @@ const HomePage = () => {
                 onChange={(e) => setSortType(e.target.value)}
                 className="hp-sort"
               >
-                <option value="" disabled hidden>Sắp xếp giá</option>
+                <option value="">Không sắp xếp</option>
                 <option value="asc">Giá tăng dần</option>
                 <option value="desc">Giá giảm dần</option>
               </select>
@@ -353,22 +392,33 @@ const HomePage = () => {
                       {typeof p.price === "number" ? p.price.toLocaleString("vi-VN") + " ₫" : "—"}
                     </div>
 
-                    {role === "ADMIN" && (
-                      <div className="hp-card-actions">
+                    <div className="hp-card-actions">
+                      {!p.outOfStock && role !== "ADMIN" && (
                         <button
-                          className="hp-card-btn edit"
-                          onClick={() => startEditProductFromCard(p)}
+                          className="hp-card-btn add-cart"
+                          onClick={() => handleAddToCart(p.id, p.name)}
+                          disabled={addingToCart === p.id}
                         >
-                          Sửa
+                          {addingToCart === p.id ? "Đang thêm..." : "🛒 Thêm"}
                         </button>
-                        <button
-                          className="hp-card-btn delete"
-                          onClick={() => requestDeleteProductFromCard(p.id)}
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                    )}
+                      )}
+                      {role === "ADMIN" && (
+                        <>
+                          <button
+                            className="hp-card-btn edit"
+                            onClick={() => startEditProductFromCard(p)}
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            className="hp-card-btn delete"
+                            onClick={() => requestDeleteProductFromCard(p.id)}
+                          >
+                            Xóa
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -376,6 +426,13 @@ const HomePage = () => {
           </div>
         </main>
       </div>
+
+      {/* Toast notification */}
+      {toast && (
+        <div className={`cart-toast ${toast.isError ? "error" : ""}`}>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 };

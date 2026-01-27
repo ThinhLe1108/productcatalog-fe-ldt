@@ -140,7 +140,7 @@ const ManagerProduct = ({
       const q = Number(stockQuantity);
 
       if (!n) return setMessage("Tên sản phẩm không được trống.");
-      if (!Number.isFinite(p) || p <= 0 || price.trim()=="") return setMessage("Giá không hợp lệ.");
+      if (!Number.isFinite(p) || p <= 0 || String(price).trim() === "") return setMessage("Giá không hợp lệ.");
       if (!Number.isInteger(q) || q < 0) return setMessage("Số lượng không hợp lệ.");
       if (!categoryId) return setMessage("Vui lòng chọn danh mục.");
 

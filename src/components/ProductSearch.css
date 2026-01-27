@@ -26,6 +26,8 @@
   flex: 1;
   background: transparent;
   border-radius: 25px;
+  background-color: white;
+  color: #111;
 }
 
 .search-input-long::placeholder {

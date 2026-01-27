@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
+import API_BASE_URL from '../config.js';
 
 const Register = ({ onToggle }) => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ const Register = ({ onToggle }) => {
     setMessage('');
 
     try {
-      const response = await fetch('/api/accounts/register', {
+      const response = await fetch(`${API_BASE_URL}/api/accounts/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

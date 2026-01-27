@@ -3,459 +3,353 @@ import "./HomePage.css";
 import reactLogo from "../assets/react.svg";
 import ManagerCategory from "../components/ManagerCategory";
 import ManagerProduct from "../components/ManagerProduct";
-
+import ProductSearch from "../components/ProductSearch";
+import API_BASE_URL from "../config.js";
 
 const HomePage = () => {
-    const [categories, setCategories] = useState([]);
-    const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
 
-    const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
 
-    const [loadingCategories, setLoadingCategories] = useState(true);
-    const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
-    const [errorCategories, setErrorCategories] = useState("");
-    const [errorProducts, setErrorProducts] = useState("");
+  const [errorCategories, setErrorCategories] = useState("");
+  const [errorProducts, setErrorProducts] = useState("");
 
-    // Chuẩn hóa token - loại bỏ prefix "Bearer " nếu có
-    const rawToken = localStorage.getItem("token") || "";
-    const token = rawToken.startsWith("Bearer ") ? rawToken.slice(7) : rawToken;
-    const [name, setName] = useState("");
-    const [role, setRole] = useState("");
+  // Token
+  const rawToken = localStorage.getItem("token") || "";
+  const token = rawToken.startsWith("Bearer ") ? rawToken.slice(7) : rawToken;
 
-    useEffect(() => {
-        setName(localStorage.getItem("fullName") || "");
-        setRole(localStorage.getItem("roleName") || "");
-    }, []);
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
 
+  // Tabs
+  const [managerTab, setManagerTab] = useState("category"); // 'category' | 'product'
 
+  // Editing objects (HomePage chỉ giữ object đang edit để bấm "Sửa" ở UI list/card)
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editingProduct, setEditingProduct] = useState(null);
 
+  // Delete requests (HomePage chỉ phát tín hiệu xóa, Manager sẽ tự gọi API xóa)
+  const [deleteCategoryRequestId, setDeleteCategoryRequestId] = useState(null);
+  const [deleteProductRequestId, setDeleteProductRequestId] = useState(null);
 
-    const logout = () => {
-        localStorage.removeItem("token");
-        window.location.href = "/login";
-    };
+  // Search results
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchError, setSearchError] = useState("");
+  const [isSearchMode, setIsSearchMode] = useState(false);
 
-    const fetchCategories = async () => {
-        setLoadingCategories(true);
-        setErrorCategories("");
-        try {
-            const res = await fetch("/api/categories", {
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-            });
+  useEffect(() => {
+    setName(localStorage.getItem("fullName") || "");
+    setRole(localStorage.getItem("roleName") || "");
+  }, []);
 
-            if (!res.ok) throw new Error((await res.text()) || "Không lấy được category");
-            const data = await res.json();
-            setCategories(Array.isArray(data) ? data : []);
-        } catch (e) {
-            setErrorCategories(e.message || "Lỗi tải category");
-        } finally {
-            setLoadingCategories(false);
-        }
-    };
+  const handleSearchResults = (results, error) => {
+    setSearchResults(results);
+    setSearchError(error);
+    setIsSearchMode(results.length > 0 || error);
+  };
 
-    useEffect(() => { fetchCategories(); }, [token]);
+  const logout = () => {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  };
 
-    // Quản lí danh mục state
-    const [managerTab, setManagerTab] = useState('category'); // 'category' hoặc 'product'
+  const authHeaders = () => ({
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  });
 
-    // Manager form state (lifted up so sidebar can trigger edits)
-    const [mgrName, setMgrName] = useState('');
-    const [mgrDescription, setMgrDescription] = useState('');
-    const [editing, setEditing] = useState(null);
-    const [mgrLoading, setMgrLoading] = useState(false);
-    const [mgrMessage, setMgrMessage] = useState('');
+  const fetchCategories = async () => {
+    setLoadingCategories(true);
+    setErrorCategories("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/categories`, {
+        headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error((await res.text()) || "Không lấy được category");
+      const data = await res.json();
+      setCategories(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setErrorCategories(e.message || "Lỗi tải category");
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
 
-    // Product form state
-    const [prodName, setProdName] = useState('');
-    const [prodDescription, setProdDescription] = useState('');
-    const [prodPrice, setProdPrice] = useState('');
-    const [prodStockQuantity, setProdStockQuantity] = useState('');
-    const [prodCategoryId, setProdCategoryId] = useState('');
-    const [prodImage, setProdImage] = useState(null);
-    const [prodEditing, setProdEditing] = useState(null);
-    const [prodLoading, setProdLoading] = useState(false);
-    const [prodMessage, setProdMessage] = useState('');
+  const fetchProducts = async () => {
+    setLoadingProducts(true);
+    setErrorProducts("");
+    try {
+      let url = `${API_BASE_URL}/api/products`;
+      if (selectedCategoryId != null) {
+        url = `${API_BASE_URL}/api/products/category/${encodeURIComponent(selectedCategoryId)}`;
+      }
 
-    const startCreate = () => {
-        setEditing(null);
-        setMgrName('');
-        setMgrDescription('');
-        setMgrMessage('');
-    };
+      const res = await fetch(url, {
+        headers: authHeaders(),
+      });
 
-    const startEdit = (c) => {
-        setEditing(c);
-        setMgrName(c.name || '');
-        setMgrDescription(c.description || '');
-        setMgrMessage('');
-    };
+      if (!res.ok) throw new Error((await res.text()) || "Không lấy được product");
+      const data = await res.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setErrorProducts(e.message || "Lỗi tải product");
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
-    const createCategory = async () => {
-        setMgrLoading(true);
-        setMgrMessage('');
-        try {
-            const res = await fetch('/api/categories/create', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-                body: JSON.stringify({ name: mgrName, description: mgrDescription }),
-            });
-            if (!res.ok) throw new Error((await res.text()) || 'Tạo thất bại');
-            setMgrMessage('Tạo thành công');
-            await fetchCategories();
-            startCreate();
-        } catch (e) {
-            setMgrMessage(e.message || 'Lỗi tạo');
-        } finally {
-            setMgrLoading(false);
-        }
-    };
+  useEffect(() => {
+    fetchCategories();
+  }, [token]);
 
-    const updateCategory = async () => {
-        if (!editing) return;
-        setMgrLoading(true);
-        setMgrMessage('');
-        try {
-            const res = await fetch(`/api/categories/id/${encodeURIComponent(editing.id)}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-                body: JSON.stringify({ name: mgrName, description: mgrDescription }),
-            });
-            if (!res.ok) throw new Error((await res.text()) || 'Cập nhật thất bại');
-            setMgrMessage('Cập nhật thành công');
-            await fetchCategories();
-            startCreate();
-        } catch (e) {
-            setMgrMessage(e.message || 'Lỗi cập nhật');
-        } finally {
-            setMgrLoading(false);
-        }
-    };
+  useEffect(() => {
+    fetchProducts();
+  }, [token, selectedCategoryId]);
 
-    const deleteCategory = async (id) => {
-        if (!confirm('Bạn có chắc muốn xoá danh mục này?')) return;
-        try {
-            const res = await fetch(`/api/categories/id/${encodeURIComponent(id)}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-            });
-            if (!res.ok) throw new Error((await res.text()) || 'Xoá thất bại');
-            await fetchCategories();
-            // if deleted currently editing item, reset form
-            if (editing && editing.id === id) startCreate();
-        } catch (e) {
-            alert(e.message || 'Lỗi xoá');
-        }
-    };
+  const sortedProducts = useMemo(() => {
+    if (!Array.isArray(products)) return [];
+    const inStock = products.filter((p) => !p.outOfStock);
+    const outStock = products.filter((p) => p.outOfStock);
+    return [...inStock, ...outStock];
+  }, [products]);
 
-    // Product management handlers
-    const startCreateProduct = () => {
-        setProdEditing(null);
-        setProdName('');
-        setProdDescription('');
-        setProdPrice('');
-        setProdStockQuantity('');
-        setProdCategoryId('');
-        setProdImage(null);
-        setProdMessage('');
-    };
+  const displayProducts = isSearchMode ? searchResults : sortedProducts;
+  const displayError = isSearchMode ? searchError : errorProducts;
+  const displayLoading = isSearchMode ? false : loadingProducts;
 
-    const startEditProduct = (p) => {
-        setProdEditing(p);
-        setProdName(p.name || '');
-        setProdDescription(p.description || '');
-        setProdPrice(p.price || '');
-        setProdStockQuantity(p.stockQuantity || '');
-        setProdCategoryId(p.categoryId || '');
-        setProdImage(null);
-        setProdMessage('');
-    };
+  // ====== UI actions (HomePage chỉ set state) ======
+  const startEditCategoryFromSidebar = (c) => {
+    setManagerTab("category");
+    setEditingCategory(c);
+  };
 
-    const fetchProducts = async () => {
-        setLoadingProducts(true);
-        setErrorProducts("");
-        try {
-            let url = "/api/products";
-            if (selectedCategoryId != null) {
-                url = `/api/products/category/${encodeURIComponent(selectedCategoryId)}`;
-            }
+  const requestDeleteCategoryFromSidebar = (id) => {
+    if (!confirm("Bạn có chắc muốn xoá danh mục này?")) return;
+    setManagerTab("category");
+    setDeleteCategoryRequestId(id);
+  };
 
-            const res = await fetch(url, {
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-            });
+  const startEditProductFromCard = (p) => {
+    setManagerTab("product");
+    setEditingProduct(p);
+  };
 
-            if (!res.ok) throw new Error((await res.text()) || "Không lấy được product");
-            const data = await res.json();
-            setProducts(Array.isArray(data) ? data : []);
-        } catch (e) {
-            setErrorProducts(e.message || "Lỗi tải product");
-        } finally {
-            setLoadingProducts(false);
-        }
-    };
+  const requestDeleteProductFromCard = (id) => {
+    if (!confirm("Bạn có chắc muốn xoá sản phẩm này?")) return;
+    setManagerTab("product");
+    setDeleteProductRequestId(id);
+  };
 
-    // createProduct và updateProduct đã được chuyển sang ManagerProduct component
+  return (
+    <div className="hp-page">
+      {/* HEADER */}
+      <header className="hp-header">
+        <div className="hp-header-left" />
 
-    const deleteProduct = async (id) => {
-        if (!confirm('Bạn có chắc muốn xoá sản phẩm này?')) return;
-        try {
-            const res = await fetch(`/api/admin/products/${encodeURIComponent(id)}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-            });
-            if (!res.ok) throw new Error((await res.text()) || 'Xoá thất bại');
-            await fetchProducts();
-            if (prodEditing && prodEditing.id === id) startCreateProduct();
-        } catch (e) {
-            alert(e.message || 'Lỗi xoá');
-        }
-    };
+        <div className="hp-header-center">
+          <img className="hp-logo" src={reactLogo} alt="React logo" />
+          <span className="hp-brand">Catalog</span>
+        </div>
 
-    useEffect(() => { fetchProducts(); }, [token, selectedCategoryId]);
+        <div className="hp-header-right">
+          {name ? <div className="hp-greeting">Xin Chào {name}</div> : null}
+          <button className="hp-logout" onClick={logout}>
+            Đăng xuất
+          </button>
+        </div>
+      </header>
 
+      {/* BODY */}
+      <div className="hp-body">
+        {/* CATEGORY */}
+        <aside className="hp-sidebar">
+          <div className="hp-sidebar-title">Danh mục</div>
 
-    const sortedProducts = useMemo(() => {
-        if (!Array.isArray(products)) return [];
-        const inStock = products.filter((p) => !p.outOfStock);
-        const outStock = products.filter((p) => p.outOfStock);
-        return [...inStock, ...outStock];
-    }, [products]);
+          <button
+            className={`hp-cat-btn ${selectedCategoryId === null ? "active" : ""}`}
+            onClick={() => setSelectedCategoryId(null)}
+          >
+            Tất cả sản phẩm
+          </button>
 
+          {loadingCategories && <div className="hp-info">Đang tải danh mục...</div>}
+          {errorCategories && <div className="hp-error">{errorCategories}</div>}
 
+          {!loadingCategories && !errorCategories && categories.length === 0 && (
+            <div className="hp-info">Chưa có danh mục nào.</div>
+          )}
 
-    return (
-        <div className="hp-page">
-            {/* HEADER */}
-            <header className="hp-header">
-                <div className="hp-header-left" />
+          <div className="hp-cat-list">
+            {categories.map((c) => (
+              <div
+                key={c.id}
+                className={`hp-cat-item ${selectedCategoryId === c.id ? "active" : ""}`}
+              >
+                <button
+                  className="hp-cat-select"
+                  onClick={() => setSelectedCategoryId(c.id)}
+                  title={c.description || ""}
+                >
+                  <div className="hp-cat-name">{c.name}</div>
+                  {c.description ? <div className="hp-cat-desc">{c.description}</div> : null}
+                </button>
 
-                <div className="hp-header-center">
-                    <img className="hp-logo" src={reactLogo} alt="React logo" />
-                    <span className="hp-brand">Catalog</span>
-                </div>
-
-                <div className="hp-header-right">
-                    {name ? (
-                        <div className="hp-greeting">Xin Chào {name}</div>
-                    ) : null}
-
-                    <button className="hp-logout" onClick={logout}>
-                        Đăng xuất
+                {role === "ADMIN" && (
+                  <div className="hp-cat-actions">
+                    <button
+                      className="hp-cat-action edit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startEditCategoryFromSidebar(c);
+                      }}
+                    >
+                      Sửa
                     </button>
-                </div>
-            </header>
-
-            {/* BODY */}
-            <div className="hp-body">
-                {/* CATEGORY */}
-                <aside className="hp-sidebar">
-                    <div className="hp-sidebar-title">Danh mục</div>
 
                     <button
-                        className={`hp-cat-btn ${selectedCategoryId === null ? "active" : ""}`}
-                        onClick={() => setSelectedCategoryId(null)}
+                      className="hp-cat-action delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        requestDeleteCategoryFromSidebar(c.id);
+                      }}
                     >
-                        Tất cả sản phẩm
+                      Xóa
                     </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </aside>
 
-                    {loadingCategories && <div className="hp-info">Đang tải danh mục...</div>}
-                    {errorCategories && <div className="hp-error">{errorCategories}</div>}
+        {/* PRODUCTS */}
+        <main className="hp-main">
+          {/* Manager UI and Search */}
+          <div className="hp-manager-tabs">
+            {role === "ADMIN" && (
+              <>
+                <button
+                  className={`hp-tab ${managerTab === "category" ? "active" : ""}`}
+                  onClick={() => setManagerTab("category")}
+                >
+                  Quản lý Danh mục
+                </button>
+                <button
+                  className={`hp-tab ${managerTab === "product" ? "active" : ""}`}
+                  onClick={() => setManagerTab("product")}
+                >
+                  Quản lý Sản phẩm
+                </button>
+              </>
+            )}
+          </div>
 
-                    {!loadingCategories && !errorCategories && categories.length === 0 && (
-                        <div className="hp-info">Chưa có danh mục nào.</div>
-                    )}
+          {role === "ADMIN" && managerTab === "category" && (
+            <ManagerCategory
+              apiBaseUrl={API_BASE_URL}
+              token={token}
+              editingCategory={editingCategory}
+              clearEditing={() => setEditingCategory(null)}
+              deleteRequestId={deleteCategoryRequestId}
+              clearDeleteRequest={() => setDeleteCategoryRequestId(null)}
+              onChanged={fetchCategories}
+            />
+          )}
 
-                    <div className="hp-cat-list">
-                        {categories.map((c) => (
-                            <div key={c.id} className={`hp-cat-item ${selectedCategoryId === c.id ? "active" : ""}`}>
+          {role === "ADMIN" && managerTab === "product" && (
+            <ManagerProduct
+              apiBaseUrl={API_BASE_URL}
+              token={token}
+              categories={categories}
+              editingProduct={editingProduct}
+              clearEditing={() => setEditingProduct(null)}
+              deleteRequestId={deleteProductRequestId}
+              clearDeleteRequest={() => setDeleteProductRequestId(null)}
+              onChanged={fetchProducts}
+            />
+          )}
 
-                                <button
-                                    className="hp-cat-select"
-                                    onClick={() => setSelectedCategoryId(c.id)}
-                                    title={c.description || ""}
-                                >
-                                    <div className="hp-cat-name">{c.name}</div>
-                                    {c.description ? <div className="hp-cat-desc">{c.description}</div> : null}
-                                </button>
-
-                                {role === 'ADMIN' && (
-                                    <div className="hp-cat-actions">
-                                        <button
-                                            className="hp-cat-action edit"
-                                            onClick={(e) => { e.stopPropagation();setManagerTab('category'); startEdit(c); }}
-                                        >
-                                            Sửa
-                                        </button>
-
-                                        <button
-                                            className="hp-cat-action delete"
-                                            onClick={(e) => { e.stopPropagation(); deleteCategory(c.id); }}
-                                        >
-                                            Xóa
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </aside>
-
-                {/* PRODUCTS */}
-                <main className="hp-main">
-                    {/* Manager UI only visible to ADMIN */}
-                    {role === 'ADMIN' && (
-                        <div className="hp-manager-tabs">
-                            <button 
-                                className={`hp-tab ${managerTab === 'category' ? 'active' : ''}`}
-                                onClick={() => setManagerTab('category')}
-                            >
-                                Quản lý Danh mục
-                            </button>
-                            <button 
-                                className={`hp-tab ${managerTab === 'product' ? 'active' : ''}`}
-                                onClick={() => setManagerTab('product')}
-                            >
-                                Quản lý Sản phẩm
-                            </button>
-                        </div>
-                    )}
-
-                    {role === 'ADMIN' && managerTab === 'category' && (
-                        <ManagerCategory
-                            name={mgrName}
-                            setName={setMgrName}
-                            description={mgrDescription}
-                            setDescription={setMgrDescription}
-                            editing={editing}
-                            startCreate={startCreate}
-                            createCategory={createCategory}
-                            updateCategory={updateCategory}
-                            loading={mgrLoading}
-                            message={mgrMessage}
-                        />
-                    )}
-
-                    {role === 'ADMIN' && managerTab === 'product' && (
-                        <ManagerProduct
-                            name={prodName}
-                            setName={setProdName}
-                            description={prodDescription}
-                            setDescription={setProdDescription}
-                            price={prodPrice}
-                            setPrice={setProdPrice}
-                            stockQuantity={prodStockQuantity}
-                            setStockQuantity={setProdStockQuantity}
-                            categoryId={prodCategoryId}
-                            setCategoryId={setProdCategoryId}
-                            image={prodImage}
-                            setImage={setProdImage}
-                            categories={categories}
-                            editing={!!prodEditing}
-                            productId={prodEditing?.id}
-                            existingImageUrl={prodEditing?.imageUrl}
-                            startCreate={startCreateProduct}
-                            loading={prodLoading}
-                            setLoading={setProdLoading}
-                            message={prodMessage}
-                            setMessage={setProdMessage}
-                            fetchProducts={fetchProducts}
-                        />
-                    )}
-                    {/* Top tools (optional: search/sort sau này) */}
-                    <div className="hp-main-top">
-                        <div className="hp-main-heading">Sản phẩm</div>
-                        <div className="hp-main-count">
-                            {loadingProducts ? "..." : `${sortedProducts.length} sản phẩm`}
-                        </div>
-                    </div>
-
-                    {loadingProducts && <div className="hp-info">Đang tải sản phẩm...</div>}
-                    {errorProducts && <div className="hp-error">{errorProducts}</div>}
-
-                    {!loadingProducts && !errorProducts && sortedProducts.length === 0 && (
-                        <div className="hp-empty">
-                            Không có sản phẩm nào trong danh mục này.
-                        </div>
-                    )}
-
-                    <div className="hp-grid">
-                        {sortedProducts.map((p) => (
-                            <div className={`hp-card ${p.outOfStock ? "out-of-stock" : ""}`} key={p.id}>
-                                <div className="hp-card-img">
-                                    {p.imageUrl ? (
-                                        <img src={p.imageUrl} alt={p.name} />
-                                    ) : (
-                                        <div className="hp-noimg">No Image</div>
-                                    )}
-                                </div>
-
-                                <div className="hp-card-body">
-                                    <div className="hp-card-title" title={p.name}>
-                                        {p.name}
-                                    </div>
-                                    <div className="hp-card-meta">
-                                        <span className="hp-chip">{p.categoryName || "No category"}</span>
-                                        <span className={`hp-stock ${p.outOfStock ? "out" : "in"}`}>
-                                            {p.outOfStock ? "Hết hàng" : `Còn ${p.stockQuantity ?? 0}`}
-                                        </span>
-                                    </div>
-
-                                    {p.description ? (
-                                        <div className="hp-card-desc">{p.description}</div>
-                                    ) : (
-                                        <div className="hp-card-desc muted">Chưa có mô tả</div>
-                                    )}
-
-                                    <div className="hp-card-footer">
-                                        <div className="hp-price">
-                                            {typeof p.price === "number"
-                                                ? p.price.toLocaleString("vi-VN") + " ₫"
-                                                : "—"}
-                                        </div>
-
-                                        {role === 'ADMIN' && (
-                                            <div className="hp-card-actions">
-                                                <button 
-                                                    className="hp-card-btn edit"
-                                                    onClick={() => { setManagerTab('product'); startEditProduct(p); }}
-                                                >
-                                                    Sửa
-                                                </button>
-                                                <button 
-                                                    className="hp-card-btn delete"
-                                                    onClick={() => deleteProduct(p.id)}
-                                                >
-                                                    Xóa
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </main>
+          {/* Products list */}
+          <div className="hp-main-top">
+            <div className="hp-main-heading">Sản phẩm</div>
+            <div style={{display: 'flex', alignItems: 'center'}}>
+              <div className="hp-main-count">
+                {displayLoading ? "..." : `${displayProducts.length} sản phẩm`}
+              </div>
+              <ProductSearch
+                apiBaseUrl={API_BASE_URL}
+                token={token}
+                onSearchResults={handleSearchResults}
+              />
             </div>
-        </div>
-    );
+          </div>
+
+          {displayLoading && <div className="hp-info">Đang tải sản phẩm...</div>}
+          {displayError && <div className="hp-error">{displayError}</div>}
+
+          {!displayLoading && !displayError && displayProducts.length === 0 && (
+            <div className="hp-empty">{isSearchMode ? "Không tìm thấy sản phẩm nào." : "Không có sản phẩm nào trong danh mục này."}</div>
+          )}
+
+          <div className="hp-grid">
+            {displayProducts.map((p) => (
+              <div className={`hp-card ${p.outOfStock ? "out-of-stock" : ""}`} key={p.id}>
+                <div className="hp-card-img">
+                  {p.imageUrl ? <img src={p.imageUrl} alt={p.name} /> : <div className="hp-noimg">No Image</div>}
+                </div>
+
+                <div className="hp-card-body">
+                  <div className="hp-card-title" title={p.name}>
+                    {p.name}
+                  </div>
+
+                  <div className="hp-card-meta">
+                    <span className="hp-chip">{p.categoryName || "No category"}</span>
+                    <span className={`hp-stock ${p.outOfStock ? "out" : "in"}`}>
+                      {p.outOfStock ? "Hết hàng" : `Còn ${p.stockQuantity ?? 0}`}
+                    </span>
+                  </div>
+
+                  {p.description ? (
+                    <div className="hp-card-desc">{p.description}</div>
+                  ) : (
+                    <div className="hp-card-desc muted">Chưa có mô tả</div>
+                  )}
+
+                  <div className="hp-card-footer">
+                    <div className="hp-price">
+                      {typeof p.price === "number" ? p.price.toLocaleString("vi-VN") + " ₫" : "—"}
+                    </div>
+
+                    {role === "ADMIN" && (
+                      <div className="hp-card-actions">
+                        <button
+                          className="hp-card-btn edit"
+                          onClick={() => startEditProductFromCard(p)}
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          className="hp-card-btn delete"
+                          onClick={() => requestDeleteProductFromCard(p.id)}
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
 };
 
 export default HomePage;

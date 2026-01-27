@@ -97,7 +97,7 @@ const ManagerProduct = ({
       const q = Number(stockQuantity);
 
       if (!n) return setMessage("Tên sản phẩm không được trống.");
-      if (!Number.isFinite(p) || p < 0) return setMessage("Giá không hợp lệ.");
+      if (!Number.isFinite(p) || p <= 0 || price.trim()=="") return setMessage("Giá không hợp lệ.");
       if (!Number.isInteger(q) || q < 0) return setMessage("Số lượng không hợp lệ.");
       if (!categoryId) return setMessage("Vui lòng chọn danh mục.");
       if (!isFile(image)) return setMessage("Vui lòng chọn ảnh.");
@@ -140,7 +140,7 @@ const ManagerProduct = ({
       const q = Number(stockQuantity);
 
       if (!n) return setMessage("Tên sản phẩm không được trống.");
-      if (!Number.isFinite(p) || p < 0) return setMessage("Giá không hợp lệ.");
+      if (!Number.isFinite(p) || p <= 0 || price.trim()=="") return setMessage("Giá không hợp lệ.");
       if (!Number.isInteger(q) || q < 0) return setMessage("Số lượng không hợp lệ.");
       if (!categoryId) return setMessage("Vui lòng chọn danh mục.");
 
@@ -237,7 +237,7 @@ const ManagerProduct = ({
 
           <div className="mp-form-row">
             <div className="mp-field">
-              <label>Số lượng *</label>
+              <label>Số lượng </label>
               <input
                 type="number"
                 value={stockQuantity}

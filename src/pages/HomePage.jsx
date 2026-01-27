@@ -314,7 +314,10 @@ const HomePage = () => {
               clearEditing={() => setEditingCategory(null)}
               deleteRequestId={deleteCategoryRequestId}
               clearDeleteRequest={() => setDeleteCategoryRequestId(null)}
-              onChanged={fetchCategories}
+              onChanged={async () => {
+                await fetchCategories();
+                await fetchProducts();
+              }}
             />
           )}
 
@@ -327,7 +330,10 @@ const HomePage = () => {
               clearEditing={() => setEditingProduct(null)}
               deleteRequestId={deleteProductRequestId}
               clearDeleteRequest={() => setDeleteProductRequestId(null)}
-              onChanged={fetchProducts}
+              onChanged={async () => {
+                await fetchProducts();
+                await fetchCategories();
+              }}
             />
           )}
 

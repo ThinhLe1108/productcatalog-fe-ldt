@@ -4,6 +4,7 @@
 }
 
 .mc-card {
+  position: relative;
   background: white;
   border: 1px solid #ececf3;
   border-radius: 16px;
@@ -39,11 +40,25 @@
 }
 
 .mc-alert {
-  margin: 12px 0;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  min-width: 220px;
   padding: 10px 12px;
   border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
+  z-index: 20;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.mc-alert.hide {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
 }
 
 .mc-alert.ok {
@@ -254,4 +269,13 @@
   .mc-row > div:nth-child(2) { grid-area: name; }
   .mc-row > div:nth-child(3) { grid-area: desc; }
   .mc-row > div:nth-child(4) { grid-area: actions; justify-content: flex-start; }
+}
+
+@media (max-width: 600px) {
+  .mc-alert {
+    position: static;
+    min-width: unset;
+    margin: 12px 0;
+    box-shadow: none;
+  }
 }

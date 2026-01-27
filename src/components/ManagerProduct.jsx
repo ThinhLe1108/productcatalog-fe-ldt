@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./ManagerProduct.css";
 import axios from "axios";
 
@@ -15,7 +15,7 @@ const ManagerProduct = ({
 
   onChanged,           // () => reload products
 }) => {
-  // Form state (đặt trong manager luôn)
+  // Form state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -24,13 +24,22 @@ const ManagerProduct = ({
   const [image, setImage] = useState(null);
 
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+
+  // Alert state tách riêng
+  const [alert, setAlert] = useState({ type: "", text: "" }); // type: "ok" | "err" | ""
+  const alertTimerRef = useRef(null);
 
   // ====== ENDPOINTS ======
   const CREATE_PRODUCT_URL = `${apiBaseUrl}/api/admin/products`; // POST multipart
   const UPLOAD_IMAGE_URL = `${apiBaseUrl}/api/admin/products/upload-image`; // POST multipart -> {imageUrl}
-  const UPDATE_PRODUCT_URL = (id) => `${apiBaseUrl}/api/admin/products/${encodeURIComponent(id)}`; // PUT json
-  const DELETE_PRODUCT_URL = (id) => `${apiBaseUrl}/api/admin/products/${encodeURIComponent(id)}`; // DELETE
+  const UPDATE_PRODUCT_URL = useMemo(
+    () => (id) => `${apiBaseUrl}/api/admin/products/${encodeURIComponent(id)}`,
+    [apiBaseUrl]
+  );
+  const DELETE_PRODUCT_URL = useMemo(
+    () => (id) => `${apiBaseUrl}/api/admin/products/${encodeURIComponent(id)}`,
+    [apiBaseUrl]
+  );
 
   const getAuthHeader = () => (token ? { Authorization: `Bearer ${token}` } : {});
 
@@ -51,7 +60,27 @@ const ManagerProduct = ({
     );
   };
 
-  const startCreate = () => {
+  const clearAlert = () => setAlert({ type: "", text: "" });
+
+  const showAlert = (type, text) => {
+    // clear timer cũ để không bị chồng
+    if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
+
+    setAlert({ type, text });
+
+    alertTimerRef.current = setTimeout(() => {
+      setAlert({ type: "", text: "" });
+      alertTimerRef.current = null;
+    }, 5000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
+    };
+  }, []);
+
+  const startCreate = (options = { keepAlert: false }) => {
     clearEditing?.();
     setName("");
     setDescription("");
@@ -59,7 +88,8 @@ const ManagerProduct = ({
     setStockQuantity("");
     setCategoryId("");
     setImage(null);
-    setMessage("");
+
+    if (!options.keepAlert) clearAlert();
   };
 
   // Đổ form khi HomePage bấm "Sửa" ở card
@@ -71,7 +101,7 @@ const ManagerProduct = ({
     setStockQuantity(editingProduct.stockQuantity ?? "");
     setCategoryId(editingProduct.categoryId ?? "");
     setImage(null);
-    setMessage("");
+    clearAlert();
   }, [editingProduct]);
 
   const uploadImageAndGetUrl = async (file) => {
@@ -79,9 +109,7 @@ const ManagerProduct = ({
     fd.append("image", file);
 
     const res = await axios.post(UPLOAD_IMAGE_URL, fd, {
-      headers: {
-        ...getAuthHeader(),
-      },
+      headers: { ...getAuthHeader() },
     });
 
     return res.data?.imageUrl || "";
@@ -90,17 +118,17 @@ const ManagerProduct = ({
   const handleCreate = async () => {
     try {
       setLoading(true);
-      setMessage("");
+      clearAlert();
 
       const n = (name || "").trim();
       const p = Number(price);
       const q = Number(stockQuantity);
 
-      if (!n) return setMessage("Tên sản phẩm không được trống.");
-      if (!Number.isFinite(p) || p <= 0 || price.trim()=="") return setMessage("Giá không hợp lệ.");
-      if (!Number.isInteger(q) || q < 0) return setMessage("Số lượng không hợp lệ.");
-      if (!categoryId) return setMessage("Vui lòng chọn danh mục.");
-      if (!isFile(image)) return setMessage("Vui lòng chọn ảnh.");
+      if (!n) return showAlert("err", "Tên sản phẩm không được trống.");
+      if (!Number.isFinite(p) || p <= 0 || String(price).trim() === "") return showAlert("err", "Giá không hợp lệ.");
+      if (!Number.isInteger(q) || q < 0) return showAlert("err", "Số lượng không hợp lệ.");
+      if (!categoryId) return showAlert("err", "Vui lòng chọn danh mục.");
+      if (!isFile(image)) return showAlert("err", "Vui lòng chọn ảnh.");
 
       const fd = new FormData();
       fd.append("name", n);
@@ -111,17 +139,15 @@ const ManagerProduct = ({
       fd.append("image", image);
 
       await axios.post(CREATE_PRODUCT_URL, fd, {
-        headers: {
-          ...getAuthHeader(),
-        },
+        headers: { ...getAuthHeader() },
       });
 
-      setMessage("Tạo sản phẩm thành công");
+      showAlert("ok", "Tạo sản phẩm thành công");
       await onChanged?.();
-      startCreate();
+      startCreate({ keepAlert: true });
     } catch (err) {
       console.error("Create error:", err?.response?.data || err);
-      setMessage(getBeMessage(err) || "Tạo sản phẩm thất bại");
+      showAlert("err", getBeMessage(err) || "Tạo sản phẩm thất bại");
     } finally {
       setLoading(false);
     }
@@ -130,25 +156,25 @@ const ManagerProduct = ({
   const handleUpdate = async () => {
     try {
       setLoading(true);
-      setMessage("");
+      clearAlert();
 
       const productId = editingProduct?.id;
-      if (!productId) return setMessage("Thiếu productId để cập nhật.");
+      if (!productId) return showAlert("err", "Thiếu productId để cập nhật.");
 
       const n = (name || "").trim();
       const p = Number(price);
       const q = Number(stockQuantity);
 
-      if (!n) return setMessage("Tên sản phẩm không được trống.");
-      if (!Number.isFinite(p) || p <= 0 || String(price).trim() === "") return setMessage("Giá không hợp lệ.");
-      if (!Number.isInteger(q) || q < 0) return setMessage("Số lượng không hợp lệ.");
-      if (!categoryId) return setMessage("Vui lòng chọn danh mục.");
+      if (!n) return showAlert("err", "Tên sản phẩm không được trống.");
+      if (!Number.isFinite(p) || p <= 0 || String(price).trim() === "") return showAlert("err", "Giá không hợp lệ.");
+      if (!Number.isInteger(q) || q < 0) return showAlert("err", "Số lượng không hợp lệ.");
+      if (!categoryId) return showAlert("err", "Vui lòng chọn danh mục.");
 
       let imageUrlToSave = editingProduct?.imageUrl || "";
 
       if (isFile(image)) {
         const uploadedUrl = await uploadImageAndGetUrl(image);
-        if (!uploadedUrl) return setMessage("Upload ảnh thất bại (không nhận được imageUrl).");
+        if (!uploadedUrl) return showAlert("err", "Upload ảnh thất bại (không nhận được imageUrl).");
         imageUrlToSave = uploadedUrl;
       }
 
@@ -168,12 +194,12 @@ const ManagerProduct = ({
         },
       });
 
-      setMessage("Cập nhật thành công");
+      showAlert("ok", "Cập nhật thành công");
       await onChanged?.();
-      startCreate();
+      startCreate({ keepAlert: true });
     } catch (err) {
       console.error("Update error:", err?.response?.data || err);
-      setMessage(getBeMessage(err) || "Cập nhật thất bại");
+      showAlert("err", getBeMessage(err) || "Cập nhật thất bại");
     } finally {
       setLoading(false);
     }
@@ -183,19 +209,19 @@ const ManagerProduct = ({
     if (!id) return;
     try {
       setLoading(true);
-      setMessage("");
+      clearAlert();
 
       await axios.delete(DELETE_PRODUCT_URL(id), {
         headers: { ...getAuthHeader() },
       });
 
-      setMessage("Xóa thành công");
+      showAlert("ok", "Xóa thành công");
       await onChanged?.();
 
-      if (editingProduct?.id === id) startCreate();
+      if (editingProduct?.id === id) startCreate({ keepAlert: true });
     } catch (err) {
       console.error("Delete error:", err?.response?.data || err);
-      setMessage(getBeMessage(err) || "Xoá thất bại");
+      showAlert("err", getBeMessage(err) || "Xoá thất bại");
     } finally {
       setLoading(false);
     }
@@ -216,6 +242,7 @@ const ManagerProduct = ({
             <h3 className="mp-title">Quản lý sản phẩm</h3>
             <div className="mp-subtitle">Tạo hoặc chỉnh sửa sản phẩm.</div>
           </div>
+
           <div className="mp-top-actions">
             <button className="mp-btn tiny" onClick={startCreate} type="button">
               Tạo mới
@@ -237,7 +264,7 @@ const ManagerProduct = ({
 
           <div className="mp-form-row">
             <div className="mp-field">
-              <label>Số lượng </label>
+              <label>Số lượng</label>
               <input
                 type="number"
                 value={stockQuantity}
@@ -259,12 +286,16 @@ const ManagerProduct = ({
 
           <div className="mp-field">
             <label>Mô tả</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows="3" />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
           </div>
 
           <div className="mp-field">
             <label>Ảnh {editingProduct ? "" : "*"}</label>
-            <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] || null)} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImage(e.target.files?.[0] || null)}
+            />
 
             {isFile(image) && <small className="mp-file-name">{image.name}</small>}
 
@@ -273,22 +304,37 @@ const ManagerProduct = ({
             )}
           </div>
 
-          <div className="mp-form-actions">
-            {editingProduct ? (
-              <button className="mp-btn primary" onClick={handleUpdate} disabled={loading} type="button">
-                {loading ? "Đang lưu..." : "Cập nhật"}
-              </button>
-            ) : (
-              <button className="mp-btn primary" onClick={handleCreate} disabled={loading} type="button">
-                {loading ? "Đang tạo..." : "Tạo sản phẩm"}
-              </button>
-            )}
+          {/* TÁCH RIÊNG: Actions và Alert */}
+          <div className="mp-footer">
+            <div className="mp-form-actions">
+              {editingProduct ? (
+                <button
+                  className="mp-btn primary"
+                  onClick={handleUpdate}
+                  disabled={loading}
+                  type="button"
+                >
+                  {loading ? "Đang lưu..." : "Cập nhật"}
+                </button>
+              ) : (
+                <button
+                  className="mp-btn primary"
+                  onClick={handleCreate}
+                  disabled={loading}
+                  type="button"
+                >
+                  {loading ? "Đang tạo..." : "Tạo sản phẩm"}
+                </button>
+              )}
+            </div>
 
-            {message && (
-              <div className={`mp-alert ${message.includes("thành công") ? "ok" : "err"}`}>
-                {message}
-              </div>
-            )}
+            <div className="mp-alert-slot" aria-live="polite">
+              {alert.text ? (
+                <div className={`mp-alert ${alert.type === "ok" ? "ok" : "err"}`}>
+                  {alert.text}
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 

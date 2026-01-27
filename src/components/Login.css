@@ -16,6 +16,8 @@ body {
   inset: 0;
   width: 100%;
   height: 100vh;
+  z-index: 10;
+  pointer-events: none; /* Quan trọng: để chuột có thể tương tác với Galaxy bên dưới */
 
   /* hỗ trợ mobile tốt hơn */
   min-height: 100svh;
@@ -27,7 +29,7 @@ body {
   justify-content: center;
   align-items: center;
 
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: transparent;
   padding: 20px;
   box-sizing: border-box;
 
@@ -46,6 +48,7 @@ body {
   width: 100%;
   max-width: 520px;
   box-sizing: border-box;
+  pointer-events: auto; /* Để form vẫn bấm được bình thường */
 
   /* tránh bị “dạt góc” khi container scroll */
   margin: auto;

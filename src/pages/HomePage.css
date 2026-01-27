@@ -384,6 +384,40 @@ body {
     gap: 16px;
 }
 
+/* SORT DROPDOWN */
+.hp-sort {
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid #e5e7f2;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    outline: none;
+    transition: 0.2s ease;
+    min-width: 150px;
+}
+
+.hp-sort:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.hp-sort:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.hp-sort {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg fill='none' stroke='%23666' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
+    padding-right: 30px;
+}
+
+
 /* CARD */
 .hp-card {
     background: white;

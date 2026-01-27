@@ -41,6 +41,8 @@ const HomePage = () => {
   const [searchError, setSearchError] = useState("");
   const [isSearchMode, setIsSearchMode] = useState(false);
 
+  const [sortType, setSortType] = useState(""); // "", "asc", "desc"
+
   useEffect(() => {
     setName(localStorage.getItem("fullName") || "");
     setRole(localStorage.getItem("roleName") || "");
@@ -111,13 +113,30 @@ const HomePage = () => {
   }, [token, selectedCategoryId]);
 
   const sortedProducts = useMemo(() => {
-    if (!Array.isArray(products)) return [];
-    const inStock = products.filter((p) => !p.outOfStock);
-    const outStock = products.filter((p) => p.outOfStock);
-    return [...inStock, ...outStock];
-  }, [products]);
+    const base = isSearchMode ? searchResults : products;
+    if (!Array.isArray(base)) return [];
 
-  const displayProducts = isSearchMode ? searchResults : sortedProducts;
+    const inStock = base.filter((p) => !p.outOfStock);
+    const outStock = base.filter((p) => p.outOfStock);
+
+    const sortByPrice = (arr) => {
+      if (sortType === "asc") {
+        return [...arr].sort((a, b) => a.price - b.price);
+      }
+      if (sortType === "desc") {
+        return [...arr].sort((a, b) => b.price - a.price);
+      }
+      return arr;
+    };
+
+    return [
+      ...sortByPrice(inStock),
+      ...sortByPrice(outStock),
+    ];
+  }, [products, searchResults, isSearchMode, sortType]);
+
+
+  const displayProducts = sortedProducts;
   const displayError = isSearchMode ? searchError : errorProducts;
   const displayLoading = isSearchMode ? false : loadingProducts;
 
@@ -276,10 +295,19 @@ const HomePage = () => {
           {/* Products list */}
           <div className="hp-main-top">
             <div className="hp-main-heading">Sản phẩm</div>
-            <div style={{display: 'flex', alignItems: 'center'}}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div className="hp-main-count">
                 {displayLoading ? "..." : `${displayProducts.length} sản phẩm`}
               </div>
+              <select
+                value={sortType}
+                onChange={(e) => setSortType(e.target.value)}
+                className="hp-sort"
+              >
+                <option value="" disabled hidden>Sắp xếp giá</option>
+                <option value="asc">Giá tăng dần</option>
+                <option value="desc">Giá giảm dần</option>
+              </select>
               <ProductSearch
                 apiBaseUrl={API_BASE_URL}
                 token={token}

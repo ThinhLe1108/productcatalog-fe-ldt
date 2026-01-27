@@ -45,7 +45,7 @@ const Register = ({ onToggle }) => {
       if (response.ok) {
         setMessage('Đăng ký thành công! Đang chuyển đến trang đăng nhập...');
         setTimeout(() => {
-          navigate('/login');
+          onToggle();
         }, 2000);
       } else {
         setMessage(data.message || 'Đăng ký thất bại!');

@@ -14,7 +14,6 @@ const ManagerCategory = ({
   onChanged,           // () => reload categories
 }) => {
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -24,7 +23,6 @@ const ManagerCategory = ({
   const startCreate = () => {
     clearEditing?.();
     setName("");
-    setDescription("");
     setMessage("");
   };
 
@@ -32,7 +30,6 @@ const ManagerCategory = ({
   useEffect(() => {
     if (!editingCategory) return;
     setName(editingCategory.name || "");
-    setDescription(editingCategory.description || "");
     setMessage("");
   }, [editingCategory]);
 
@@ -46,7 +43,7 @@ const ManagerCategory = ({
           "Content-Type": "application/json",
           ...getAuthHeader(),
         },
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({ name}),
       });
       if (!res.ok) throw new Error((await res.text()) || "Tạo thất bại");
 
@@ -73,7 +70,7 @@ const ManagerCategory = ({
             "Content-Type": "application/json",
             ...getAuthHeader(),
           },
-          body: JSON.stringify({ name, description }),
+          body: JSON.stringify({ name}),
         }
       );
       if (!res.ok) throw new Error((await res.text()) || "Cập nhật thất bại");
@@ -140,10 +137,6 @@ const ManagerCategory = ({
             <div className="mc-field">
               <label>Tên danh mục</label>
               <input value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="mc-field">
-              <label>Mô tả</label>
-              <input value={description} onChange={(e) => setDescription(e.target.value)} />
             </div>
           </div>
 

@@ -212,6 +212,7 @@ body {
 .hp-cat-item.active .hp-cat-select{
     background: #eef2ff;
     border-color: #667eea;
+    color: #d01ae0;
 }
 
 .hp-cat-actions{
@@ -317,11 +318,12 @@ body {
     width: 100%;
     text-align: left;
     border: 1px solid #ececf3;
-    background: #fff;
+    background: #111111;
     border-radius: 14px;
     padding: 10px 12px;
     cursor: pointer;
     transition: 0.2s ease;
+    color: #fff;
 
     display: flex;
     flex-direction: column;
@@ -337,6 +339,7 @@ body {
 .hp-cat-btn.active {
     background: #eef2ff;
     border-color: #667eea;
+    color: #d01ae0;
 }
 
 .hp-cat-name {

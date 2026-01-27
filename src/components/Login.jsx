@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
-import API_BASE_URL from '../config.js';
 
 const Login = ({ onToggle }) => {
   const navigate = useNavigate();
@@ -25,7 +24,7 @@ const Login = ({ onToggle }) => {
     setMessage('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/accounts/login`, {
+      const response = await fetch('/api/accounts/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,8 +77,6 @@ const Login = ({ onToggle }) => {
     }
   };
 
-
-  //render ui
   return (
     <div className="auth-container">
       <div className="auth-box">

@@ -284,7 +284,8 @@ body {
 /* Product card actions */
 .hp-card-actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
+  align-items: center;
 }
 
 .hp-card-btn {
@@ -314,6 +315,38 @@ body {
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
+
+/* Quantity input in product card */
+.hp-qty {
+  width: 72px;              /* độ rộng */
+  height: 34px;             /* chiều cao cho đẹp với nút */
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid #e5e7f2;
+  background: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  outline: none;
+  text-align: center;       /* căn giữa số */
+  transition: 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.hp-qty:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.18);
+}
+
+/* Giảm/ẩn nút tăng giảm của input number (tuỳ chọn) */
+.hp-qty::-webkit-outer-spin-button,
+.hp-qty::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.hp-qty[type="number"] {
+  -moz-appearance: textfield;
+}
+
 .hp-cat-btn {
     width: 100%;
     text-align: left;
@@ -635,4 +668,32 @@ body {
     .hp-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Fix price wrap + keep footer layout consistent */
+.hp-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.hp-price {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;      /* ✅ không cho xuống dòng */
+  overflow: hidden;
+  text-overflow: ellipsis;  /* phòng trường hợp màn hình quá nhỏ */
+}
+
+.hp-card-actions {
+  flex-shrink: 0;           /* actions không bị ép nhỏ gây vỡ layout */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* (tuỳ chọn) giảm chút width input để đỡ chật */
+.hp-qty {
+  width: 64px;
 }

@@ -42,14 +42,22 @@ const Cart = forwardRef(({ apiBaseUrl, token, onCartUpdated }, ref) => {
                 headers: authHeaders(),
                 body: JSON.stringify({ productId, quantity }),
             });
-            if (!res.ok) throw new Error((await res.text()) || "Không thể thêm vào giỏ hàng");
+            if (!res.ok) {
+                const errorText = await res.text();
+                // Bắt lỗi không đủ hàng tồn kho
+                if (res.status === 400 && errorText.toLowerCase().includes("not enough stock")) {
+                    throw new Error("Không đủ số lượng hàng tồn kho");
+                }
+                throw new Error(errorText || "Không thể thêm vào giỏ hàng");
+            }
             const data = await res.json();
             setCart(data || null);
             if (onCartUpdated) onCartUpdated(data || null);
             return { success: true, data };
         } catch (e) {
-            setError(e?.message || "Lỗi thêm vào giỏ hàng");
-            return { success: false, error: e?.message || "Lỗi thêm vào giỏ hàng" };
+            const errorMsg = e?.message || "Lỗi thêm vào giỏ hàng";
+            setError(errorMsg);
+            return { success: false, error: errorMsg };
         }
     };
 

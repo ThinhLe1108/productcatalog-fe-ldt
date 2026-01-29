@@ -48,6 +48,7 @@ const HomePage = () => {
   const cartRef = useRef(null);
   const [toast, setToast] = useState(null);
   const [addingToCart, setAddingToCart] = useState(null);
+  const [qtyByProduct, setQtyByProduct] = useState({});
 
   useEffect(() => {
     setName(localStorage.getItem("fullName") || "");
@@ -65,16 +66,23 @@ const HomePage = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleAddToCart = async (productId, productName) => {
+  const handleAddToCart = async (productId, productName, quantity) => {
     setAddingToCart(productId);
     try {
       const res = await fetch(`${API_BASE_URL}/api/cart/items`, {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ productId, quantity: 1 }),
+        body: JSON.stringify({ productId, quantity }),
       });
-      if (!res.ok) throw new Error((await res.text()) || "Không thể thêm vào giỏ hàng");
-      showToast(`Đã thêm "${productName}" vào giỏ hàng!`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        // Bắt lỗi không đủ hàng tồn kho
+        if (res.status === 400 && errorText.toLowerCase().includes("not enough stock")) {
+          throw new Error(`Không đủ số lượng hàng tồn kho cho "${productName}"`);
+        }
+        throw new Error(errorText || "Không thể thêm vào giỏ hàng");
+      }
+      showToast(`Đã thêm "${productName}" (x${quantity}) vào giỏ hàng!`);
       // Refresh cart component
       if (cartRef.current) {
         cartRef.current.fetchCart();
@@ -395,18 +403,30 @@ const HomePage = () => {
 
                   <div className="hp-card-footer">
                     <div className="hp-price">
-                      {typeof p.price === "number" ? p.price.toLocaleString("vi-VN") + " ₫" : "—"}
+                      {typeof p.price === "number" ? p.price.toLocaleString("vi-VN") + "₫" : "—"}
                     </div>
 
                     <div className="hp-card-actions">
                       {!p.outOfStock && role !== "ADMIN" && (
-                        <button
-                          className="hp-card-btn add-cart"
-                          onClick={() => handleAddToCart(p.id, p.name)}
-                          disabled={addingToCart === p.id}
-                        >
-                          {addingToCart === p.id ? "Đang thêm..." : "🛒 Thêm"}
-                        </button>
+                        <>
+                          <input
+                            type="number"
+                            min={1}
+                            value={qtyByProduct[p.id] ?? 1}
+                            onChange={(e) => {
+                              const v = Math.max(1, Number(e.target.value || 1));
+                              setQtyByProduct((prev) => ({ ...prev, [p.id]: v }));
+                            }}
+                            className="hp-qty"
+                          />
+                          <button
+                            className="hp-card-btn add-cart"
+                            onClick={() => handleAddToCart(p.id, p.name, qtyByProduct[p.id] ?? 1)}
+                            disabled={addingToCart === p.id}
+                          >
+                            {addingToCart === p.id ? "Đang thêm..." : "🛒 Thêm"}
+                          </button>
+                        </>
                       )}
                       {role === "ADMIN" && (
                         <>

@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import "./ManagerProduct.css";
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const ManagerProduct = ({
-  apiBaseUrl,
   token,
   categories,
 
@@ -30,15 +31,15 @@ const ManagerProduct = ({
   const alertTimerRef = useRef(null);
 
   // ====== ENDPOINTS ======
-  const CREATE_PRODUCT_URL = `${apiBaseUrl}/api/admin/products`; // POST multipart
-  const UPLOAD_IMAGE_URL = `${apiBaseUrl}/api/admin/products/upload-image`; // POST multipart -> {imageUrl}
+  const CREATE_PRODUCT_URL = `${API_BASE_URL}/api/admin/products`; // POST multipart
+  const UPLOAD_IMAGE_URL = `${API_BASE_URL}/api/admin/products/upload-image`; // POST multipart -> {imageUrl}
   const UPDATE_PRODUCT_URL = useMemo(
-    () => (id) => `${apiBaseUrl}/api/admin/products/${encodeURIComponent(id)}`,
-    [apiBaseUrl]
+    () => (id) => `${API_BASE_URL}/api/admin/products/${encodeURIComponent(id)}`,
+    []
   );
   const DELETE_PRODUCT_URL = useMemo(
-    () => (id) => `${apiBaseUrl}/api/admin/products/${encodeURIComponent(id)}`,
-    [apiBaseUrl]
+    () => (id) => `${API_BASE_URL}/api/admin/products/${encodeURIComponent(id)}`,
+    []
   );
 
   const getAuthHeader = () => (token ? { Authorization: `Bearer ${token}` } : {});

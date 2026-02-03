@@ -1,7 +1,9 @@
 import { useState, useRef } from "react";
 import "./ProductSearch.css";
 
-const ProductSearch = ({ apiBaseUrl, token, onSearchResults }) => {
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+const ProductSearch = ({ token, onSearchResults }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
@@ -19,7 +21,7 @@ const ProductSearch = ({ apiBaseUrl, token, onSearchResults }) => {
     try {
       const encodedQuery = encodeURIComponent(query.trim());
       const response = await fetch(
-        `${apiBaseUrl}/api/products/search?name=${encodedQuery}`,
+        `${API_BASE_URL}/api/products/search?name=${encodedQuery}`,
         {
           method: "GET",
           headers: {

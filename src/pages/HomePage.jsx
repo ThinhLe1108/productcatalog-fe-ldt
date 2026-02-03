@@ -96,7 +96,7 @@ const HomePage = () => {
 
   const logout = () => {
     localStorage.removeItem("token");
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   const authHeaders = () => ({
@@ -219,7 +219,6 @@ const HomePage = () => {
           {role !== "ADMIN" && (
             <Cart
               ref={cartRef}
-              apiBaseUrl={API_BASE_URL}
               token={token}
             />
           )}
@@ -316,7 +315,6 @@ const HomePage = () => {
 
           {role === "ADMIN" && managerTab === "category" && (
             <ManagerCategory
-              apiBaseUrl={API_BASE_URL}
               token={token}
               editingCategory={editingCategory}
               clearEditing={() => setEditingCategory(null)}
@@ -331,7 +329,6 @@ const HomePage = () => {
 
           {role === "ADMIN" && managerTab === "product" && (
             <ManagerProduct
-              apiBaseUrl={API_BASE_URL}
               token={token}
               categories={categories}
               editingProduct={editingProduct}
@@ -362,7 +359,6 @@ const HomePage = () => {
                 <option value="desc">Giá giảm dần</option>
               </select>
               <ProductSearch
-                apiBaseUrl={API_BASE_URL}
                 token={token}
                 onSearchResults={handleSearchResults}
               />
@@ -414,8 +410,26 @@ const HomePage = () => {
                             min={1}
                             value={qtyByProduct[p.id] ?? 1}
                             onChange={(e) => {
-                              const v = Math.max(1, Number(e.target.value || 1));
-                              setQtyByProduct((prev) => ({ ...prev, [p.id]: v }));
+                              const raw = e.target.value;
+
+                              // cho phép xóa trắng để nhập số khác
+                              if (raw === "") {
+                                setQtyByProduct((prev) => ({ ...prev, [p.id]: "" }));
+                                return;
+                              }
+
+                              const n = Number(raw);
+                              if (!Number.isFinite(n)) return;
+
+                              setQtyByProduct((prev) => ({ ...prev, [p.id]: n }));
+                            }}
+                            onBlur={() => {
+                              // rời ô thì ép tối thiểu là 1
+                              setQtyByProduct((prev) => {
+                                const v = prev[p.id];
+                                const n = Number(v);
+                                return { ...prev, [p.id]: Number.isFinite(n) && n >= 1 ? n : 1 };
+                              });
                             }}
                             className="hp-qty"
                           />

@@ -1,7 +1,9 @@
 import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import "./Cart.css";
 
-const Cart = forwardRef(({ apiBaseUrl, token, onCartUpdated }, ref) => {
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+const Cart = forwardRef(({ token, onCartUpdated }, ref) => {
     const [cart, setCart] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -17,7 +19,7 @@ const Cart = forwardRef(({ apiBaseUrl, token, onCartUpdated }, ref) => {
         setLoading(true);
         setError("");
         try {
-            const res = await fetch(`${apiBaseUrl}/api/cart`, {
+            const res = await fetch(`${API_BASE_URL}/api/cart`, {
                 headers: authHeaders(),
             });
             if (!res.ok) throw new Error((await res.text()) || "Không lấy được giỏ hàng");
@@ -37,7 +39,7 @@ const Cart = forwardRef(({ apiBaseUrl, token, onCartUpdated }, ref) => {
 
         setError("");
         try {
-            const res = await fetch(`${apiBaseUrl}/api/cart/items`, {
+            const res = await fetch(`${API_BASE_URL}/api/cart/items`, {
                 method: "POST",
                 headers: authHeaders(),
                 body: JSON.stringify({ productId, quantity }),
@@ -78,7 +80,7 @@ const Cart = forwardRef(({ apiBaseUrl, token, onCartUpdated }, ref) => {
 
         setError("");
         try {
-            const res = await fetch(`${apiBaseUrl}/api/cart/items/${encodeURIComponent(idNumber)}`, {
+            const res = await fetch(`${API_BASE_URL}/api/cart/items/${encodeURIComponent(idNumber)}`, {
                 method: "DELETE",
                 headers: authHeaders(),
             });

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import "./ManagerCategory.css";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const ManagerCategory = ({
-  apiBaseUrl,
   token,
 
   editingCategory,     // object hoặc null
@@ -69,7 +70,7 @@ const ManagerCategory = ({
     setLoading(true);
     clearAlert();
     try {
-      const res = await fetch(`${apiBaseUrl}/api/categories/create`, {
+      const res = await fetch(`${API_BASE_URL}/api/categories/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -98,7 +99,7 @@ const ManagerCategory = ({
     clearAlert();
     try {
       const res = await fetch(
-        `${apiBaseUrl}/api/categories/id/${encodeURIComponent(editingCategory.id)}`,
+        `${API_BASE_URL}/api/categories/id/${encodeURIComponent(editingCategory.id)}`,
         {
           method: "PUT",
           headers: {
@@ -126,7 +127,7 @@ const ManagerCategory = ({
     setLoading(true);
     clearAlert();
     try {
-      const res = await fetch(`${apiBaseUrl}/api/categories/id/${encodeURIComponent(id)}`, {
+      const res = await fetch(`${API_BASE_URL}/api/categories/id/${encodeURIComponent(id)}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
